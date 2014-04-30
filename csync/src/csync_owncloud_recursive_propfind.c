@@ -165,7 +165,12 @@ static void propfind_results_recursive(void *userdata,
     file_id      = ne_propset_value( set, &ls_props[4] );
 
     newres->type = resr_normal;
+
+    DEBUG_WEBDAV("KUBA: ITEM %s %s modtime %s clength %s resourcetype %s md5sum %s file_id %s",newres->uri,newres->name,modtime,clength,resourcetype,md5sum,file_id);      
+
+
     if( resourcetype && strncmp( resourcetype, "<DAV:collection>", 16 ) == 0) {
+      DEBUG_WEBDAV("KUBA: COLLECTION %s %s",newres->uri,newres->name);
         newres->type = resr_collection;
         propfind_recursive_cache_folder_count++;
     } else {

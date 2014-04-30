@@ -40,6 +40,30 @@ Q_DECLARE_METATYPE(QTimer*)
 
 namespace Mirall {
 
+
+  void DEBUG_REPLY(QNetworkReply &reply) 
+  {
+    //char buf[8156+1];
+
+    qDebug() << "KUBA: davReply: "<< reply.url() << " HTTP_status: " << reply.attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() << " error: " << reply.error();
+
+    foreach (QByteArray rawHeader, reply.rawHeaderList()) {
+      qDebug() << "KUBA: davReply: header["<<rawHeader<<"]: "<< reply.rawHeader(rawHeader);
+    }
+
+    /*
+    if(reply.peek(buf,8156) == -1) {
+      qDebug() << "KUBA: ERROR PEEKING";
+      }*/
+
+    QByteArray dbg_buf = reply.peek(8156);
+    dbg_buf.replace('\0', "\\0");
+    dbg_buf.replace('\n', ""); // remove new lines
+    
+    qDebug() << "KUBA: davReply: DATA ("<< reply.bytesAvailable() << "bytes):" << dbg_buf;
+
+  }
+
 AbstractNetworkJob::AbstractNetworkJob(Account *account, const QString &path, QObject *parent)
     : QObject(parent)
     , _ignoreCredentialFailure(false)
@@ -112,6 +136,7 @@ QNetworkReply* AbstractNetworkJob::davRequest(const QByteArray &verb, const QStr
 
 QNetworkReply *AbstractNetworkJob::davRequest(const QByteArray &verb, const QUrl &url, QNetworkRequest req, QIODevice *data)
 {
+
     return addTimer(_account->davRequest(verb, url, req, data));
 }
 
@@ -137,6 +162,8 @@ QNetworkReply *AbstractNetworkJob::headRequest(const QUrl &url)
 
 void AbstractNetworkJob::slotFinished()
 {
+    DEBUG_REPLY(*this->_reply);
+
     if( _reply->error() != QNetworkReply::NoError ) {
         qDebug() << Q_FUNC_INFO << _reply->error() << _reply->errorString();
         if (_reply->error() == QNetworkReply::ProxyAuthenticationRequiredError) {

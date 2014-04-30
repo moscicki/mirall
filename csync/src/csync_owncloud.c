@@ -543,6 +543,23 @@ static int dav_connect(const char *base_url) {
         ne_set_proxy_auth( dav_session.ctx, ne_proxy_auth, 0 );
     }
 
+    // KUBA - BEGIN
+
+    char *NEON_DEBUG_LEVEL = getenv("NEON_DEBUG_LEVEL");
+    if(NEON_DEBUG_LEVEL)
+      {
+	int neon_debug_level = atoi(NEON_DEBUG_LEVEL);
+	fprintf(stderr,"DEBUG ENABLED: %d (NEON_DEBUG_LEVEL='%s')\n",neon_debug_level,NEON_DEBUG_LEVEL);
+	ne_debug_init(stderr,neon_debug_level); 
+      }
+    else
+      {
+	fprintf(stderr,"You may enable NEON debug by setting NEON_DEBUG_LEVEL, see also http://happygiraffe.net/blog/2009/09/23/neon-debug-mask/\n");
+	//130 => prints requests and reponses
+      }
+
+    // KUBA - END
+
     _connected = 1;
     rc = 0;
 out:
@@ -596,7 +613,15 @@ static void results(void *userdata,
     file_id      = ne_propset_value( set, &ls_props[4] );
 
     newres->type = resr_normal;
+
+
+    DEBUG_WEBDAV("KUBA2: ITEM %s %s modtime %s clength %s resourcetype %s md5sum %s file_id %s",newres->uri,newres->name,modtime,clength,resourcetype,md5sum,file_id);      
+
+    // KUBA: RELAXED CONDITION ACCEPTING THE WHITE SPACES (IN CASE OF XML PRETTY-FORMATTING)
+    //    if( clength == NULL && resourcetype && strstr( resourcetype, "<DAV:collection>") != NULL) {
+
     if( clength == NULL && resourcetype && strncmp( resourcetype, "<DAV:collection>", 16 ) == 0) {
+      DEBUG_WEBDAV("KUBA2: COLLECTION %s %s",newres->uri,newres->name);
         newres->type = resr_collection;
     }
 

@@ -63,7 +63,10 @@
 #include "csync_log.h"
 
 
-#define DEBUG_WEBDAV(...) csync_log( 9, "oc_module", __VA_ARGS__);
+//#define DEBUG_WEBDAV(...) csync_log( 9, "oc_module", __VA_ARGS__);
+
+//KUBA:
+#define DEBUG_WEBDAV(...) { fprintf( stderr, "oc_module:" __VA_ARGS__); fprintf(stderr,"\n"); }
 
 enum resource_type {
     resr_normal = 0,
