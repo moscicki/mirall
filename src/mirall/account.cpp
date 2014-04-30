@@ -32,6 +32,32 @@
 
 namespace Mirall {
 
+
+  void DEBUG_REQUEST(const QByteArray &verb, const QUrl &url, QNetworkRequest req, QIODevice *data)
+  {
+    qDebug() << "KUBA: davRequest: " << verb << " " << url;
+
+    const QList<QByteArray>& rawHeaderList(req.rawHeaderList());
+    foreach (QByteArray rawHeader, rawHeaderList) {
+      qDebug() << "KUBA: davRequest: header["<<rawHeader<<"]: "<< req.rawHeader(rawHeader);
+    }
+
+    if(data)
+      {
+	QByteArray dbg_buf = data->peek(8156);
+	dbg_buf.replace('\0', "\\0");
+	dbg_buf.replace('\n', ""); // remove new lines
+	
+	qDebug() << "KUBA: davRequest: DATA ("<< data->bytesAvailable() << "bytes):" << dbg_buf;
+      }
+    else
+      {
+	qDebug() << "KUBA: davRequest: DATA ( 0 bytes): \"\"";
+      }
+
+  }
+
+
 static const char urlC[] = "url";
 static const char authTypeC[] = "authType";
 static const char userC[] = "user";
@@ -213,6 +239,9 @@ QNetworkReply *Account::headRequest(const QString &relPath)
 QNetworkReply *Account::headRequest(const QUrl &url)
 {
     QNetworkRequest request(url);
+
+    DEBUG_REQUEST("HEAD",url,request,NULL);
+
     return _am->head(request);
 }
 
@@ -224,6 +253,9 @@ QNetworkReply *Account::getRequest(const QString &relPath)
 QNetworkReply *Account::getRequest(const QUrl &url)
 {
     QNetworkRequest request(url);
+
+    DEBUG_REQUEST("GET",url,request,NULL);
+
     return _am->get(request);
 }
 
@@ -235,8 +267,12 @@ QNetworkReply *Account::davRequest(const QByteArray &verb, const QString &relPat
 QNetworkReply *Account::davRequest(const QByteArray &verb, const QUrl &url, QNetworkRequest req, QIODevice *data)
 {
     req.setUrl(url);
+
+    DEBUG_REQUEST(verb,url,req,data);
+
     return _am->sendCustomRequest(req, verb, data);
 }
+
 
 void Account::setSslConfiguration(const QSslConfiguration &config)
 {
