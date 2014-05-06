@@ -708,6 +708,8 @@ void PropagateDownloadFile::start()
 {
     emit progress(Progress::StartDownload, _item, 0, _item._size);
 
+    qDebug() << "KUBA:  PropagateDownloadFile::start()" << _item._file;
+
     QString tmpFileName;
     const SyncJournalDb::DownloadInfo progressInfo = _propagator->_journal->getDownloadInfo(_item._file);
     if (progressInfo._valid) {
@@ -888,6 +890,7 @@ void PropagateDownloadFile::start()
     struct timeval times[2];
     times[0].tv_sec = times[1].tv_sec = _item._modtime;
     times[0].tv_usec = times[1].tv_usec = 0;
+    qDebug() << "KUBA: updating timestamps, file " << fn << "mtime" << _item._modtime;
     c_utimes(fn.toUtf8().data(), times);
 
     _propagator->_journal->setFileRecord(SyncJournalFileRecord(_item, fn));
