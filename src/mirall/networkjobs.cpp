@@ -328,6 +328,11 @@ void LsColJob::start()
 
 bool LsColJob::finished()
 {
+
+  qDebug() << "KUBA: HTTP response" << reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+
+  qDebug() << "KUBA: complete reply: +"<< reply() << "+";
+
     if (reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute) == 207) {
         // Parse DAV response
         QXmlStreamReader reader(reply());
@@ -338,18 +343,27 @@ bool LsColJob::finished()
 
         while (!reader.atEnd()) {
             QXmlStreamReader::TokenType type = reader.readNext();
+
+	    qDebug() << "KUBA: token type: "<< type;
+
             if (type == QXmlStreamReader::StartElement &&
                     reader.namespaceUri() == QLatin1String("DAV:")) {
                 QString name = reader.name().toString();
+		qDebug() << "KUBA: XML name: >" << name << "<";
                 if (name == QLatin1String("href")) {
                     currentItem = reader.readElementText();
+		    qDebug() << "KUBA: currentItem: >" << currentItem << "<";
                 } else if (name == QLatin1String("collection") &&
                            !currentItem.isEmpty()) {
+		  qDebug() << "KUBA: append folder: " << QUrl::fromEncoded(currentItem.toLatin1()).path();
+
                     folders.append(QUrl::fromEncoded(currentItem.toLatin1()).path());
                     currentItem.clear();
                 }
             }
         }
+
+	qDebug() << "KUBA: Error string:" << reader.errorString();
         emit directoryListing(folders);
     }
     return true;
