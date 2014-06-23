@@ -55,12 +55,17 @@ void csyncLogCatcher(int /*verbosity*/,
 bool SyncEngine::_syncRunning = false;
 
 SyncEngine::SyncEngine(CSYNC *ctx, const QString& localPath, const QString& remoteURL, const QString& remotePath, Mirall::SyncJournalDb* journal)
+  : _csync_ctx(ctx)
+  , _needsUpdate(false)
+  , _localPath(localPath)
+  , _remoteUrl(remoteURL)
+  , _remotePath(remotePath)
+  , _journal(journal)
+  , _hasFiles(false)
+  , _downloadLimit(0)
+  , _uploadLimit(0)
+
 {
-    _localPath = localPath;
-    _remotePath = remotePath;
-    _remoteUrl = remoteURL;
-    _csync_ctx = ctx;
-    _journal = journal;
     qRegisterMetaType<SyncFileItem>("SyncFileItem");
     qRegisterMetaType<SyncFileItem::Status>("SyncFileItem::Status");
     qRegisterMetaType<Progress::Info>("Progress::Info");
@@ -265,7 +270,7 @@ int SyncEngine::treewalkFile( TREE_WALK_FILE *file, bool remote )
     item._fileId = file->file_id;
 
     // record the seen files to be able to clean the journal later
-    _seenFiles[item._file] = QString();
+    _seenFiles.insert(item._file);
 
     switch(file->error_status) {
     case CSYNC_STATUS_OK:
@@ -655,6 +660,7 @@ void SyncEngine::slotFinished()
     if( ! _journal->postSyncCleanup( _seenFiles ) ) {
         qDebug() << "Cleaning of synced ";
     }
+
     _journal->commit("All Finished.", false);
     emit treeWalkResult(_syncedItems);
     finalize();
@@ -662,14 +668,14 @@ void SyncEngine::slotFinished()
 
 void SyncEngine::finalize()
 {
+    _thread.quit();
+    _thread.wait();
     csync_commit(_csync_ctx);
 
     qDebug() << "CSync run took " << _stopWatch.addLapTime(QLatin1String("Sync Finished"));
     _stopWatch.stop();
 
     _propagator.reset(0);
-    _thread.quit();
-    _thread.wait();
     _syncRunning = false;
     emit finished();
 }
